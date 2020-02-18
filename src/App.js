@@ -57,7 +57,7 @@ class SubmitBoggle extends React.Component {
             ]
         };
 
-        postData('http://localhost:8080/evaluations/en', board)
+        postData('https://boggle-evaluator-api.herokuapp.com/evaluations/en', board)
             .then((data) => {
                 let numberOfRecords = data.results.length;
                 let numColumn1 = Math.ceil(numberOfRecords / 2);

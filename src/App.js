@@ -2,20 +2,18 @@ import React from 'react';
 import './App.css';
 
 async function postData(url = '', data = {}) {
-    // Default options are marked with *
     const response = await fetch(url, {
-        method: 'POST', // *GET, POST, PUT, DELETE, etc.
-        mode: 'cors', // no-cors, *cors, same-origin
-        cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
         headers: {
             'Content-Type': 'application/json'
-            // 'Content-Type': 'application/x-www-form-urlencoded',
         },
-        redirect: 'follow', // manual, *follow, error
-        referrerPolicy: 'no-referrer', // no-referrer, *client
-        body: JSON.stringify(data) // body data type must match "Content-Type" header
+        redirect: 'follow',
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(data)
     });
-    return await response.json(); // parses JSON response into native JavaScript objects
+    return await response.json();
 }
 
 class SubmitBoggle extends React.Component {
@@ -26,9 +24,8 @@ class SubmitBoggle extends React.Component {
             row2: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()},
             row3: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()},
             row4: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()},
-            wordsMatched: [], spinnerVisibility: "http-loading-hidden"
+            wordsMatched: [], spinnerVisibility: "http-loading-hidden", column1Records: [], column2Records: []
         };
-        this.handleClick = this.handleClick.bind(this);
     }
 
     getRandomLetter = () => {
@@ -38,19 +35,19 @@ class SubmitBoggle extends React.Component {
         return character;
 
     };
+
     randomizeBoard = (e) => {
         this.setState({
-            wordsMatched: [],
+            wordsMatched: [], column1Records: [], column2Records: [],
             row1: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()},
             row2: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()},
             row3: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()},
             row4: {column1: this.getRandomLetter(), column2: this.getRandomLetter(), column3: this.getRandomLetter(), column4: this.getRandomLetter()}
         });
     };
+
     handleClick = (e) => {
-        e.preventDefault();
-        let self = this;
-        self.setState({spinnerVisibility: "http-loading-visible", wordsMatched: []});
+        this.setState({spinnerVisibility: "http-loading-visible", wordsMatched: []});
         let board = {
             "boardLetters": [
                 [this.state.row1.column1, this.state.row1.column2, this.state.row1.column3, this.state.row1.column4],
@@ -59,16 +56,24 @@ class SubmitBoggle extends React.Component {
                 [this.state.row4.column1, this.state.row4.column2, this.state.row4.column3, this.state.row4.column4]
             ]
         };
-        postData('http://localhost:8080/evaluations', board)
+
+        postData('http://localhost:8080/evaluations/en', board)
             .then((data) => {
-                console.log(data); // JSON data parsed by `response.json()` call
-                self.setState({
+                let numberOfRecords = data.results.length;
+                let numColumn1 = Math.ceil(numberOfRecords / 2);
+                let firstColumnRecords = data.results.slice(0, numColumn1);
+                let secondColumnRecords = data.results.slice(numColumn1, data.results.length);
+
+                this.setState({
                     wordsMatched: data.results,
-                    spinnerVisibility: "http-loading-hidden"
+                    spinnerVisibility: "http-loading-hidden",
+                    column1Records: firstColumnRecords,
+                    column2Records: secondColumnRecords
                 });
             });
     };
-    handleChange = (event) => {
+
+    handleLetterChange = (event) => {
         let newValue = event.target.value.toUpperCase();
         if (newValue.length > 1) {
             return;
@@ -140,10 +145,16 @@ class SubmitBoggle extends React.Component {
         }
     };
 
+    renderRow = (records) => {
+        return records.map((word) =>
+            <li className="list-group-item" key={word}>
+                {word}
+            </li>)
+    };
+
     render() {
-        const words = this.state.wordsMatched.map((word, number) =>
-            <li key={number}>{++number} - {word}</li>
-        );
+        const column1 = this.renderRow(this.state.column1Records);
+        const column2 = this.renderRow(this.state.column2Records);
 
         return (
             <div>
@@ -166,40 +177,40 @@ class SubmitBoggle extends React.Component {
                         <div className="row">
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
-                            <div className="col-sm"><input id="1.1" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row1.column1}/></div>
-                            <div className="col-sm"><input id="1.2" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row1.column2}/></div>
-                            <div className="col-sm"><input id="1.3" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row1.column3}/></div>
-                            <div className="col-sm"><input id="1.4" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row1.column4}/></div>
+                            <div className="col-sm"><input id="1.1" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row1.column1}/></div>
+                            <div className="col-sm"><input id="1.2" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row1.column2}/></div>
+                            <div className="col-sm"><input id="1.3" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row1.column3}/></div>
+                            <div className="col-sm"><input id="1.4" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row1.column4}/></div>
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
                         </div>
                         <div className="row">
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
-                            <div className="col-sm"><input id="2.1" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row2.column1}/></div>
-                            <div className="col-sm"><input id="2.2" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row2.column2}/></div>
-                            <div className="col-sm"><input id="2.3" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row2.column3}/></div>
-                            <div className="col-sm"><input id="2.4" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row2.column4}/></div>
+                            <div className="col-sm"><input id="2.1" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row2.column1}/></div>
+                            <div className="col-sm"><input id="2.2" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row2.column2}/></div>
+                            <div className="col-sm"><input id="2.3" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row2.column3}/></div>
+                            <div className="col-sm"><input id="2.4" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row2.column4}/></div>
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
                         </div>
                         <div className="row">
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
-                            <div className="col-sm"><input id="3.1" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row3.column1}/></div>
-                            <div className="col-sm"><input id="3.2" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row3.column2}/></div>
-                            <div className="col-sm"><input id="3.3" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row3.column3}/></div>
-                            <div className="col-sm"><input id="3.4" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row3.column4}/></div>
+                            <div className="col-sm"><input id="3.1" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row3.column1}/></div>
+                            <div className="col-sm"><input id="3.2" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row3.column2}/></div>
+                            <div className="col-sm"><input id="3.3" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row3.column3}/></div>
+                            <div className="col-sm"><input id="3.4" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row3.column4}/></div>
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
                         </div>
                         <div className="row">
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
-                            <div className="col-sm"><input id="4.1" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row4.column1}/></div>
-                            <div className="col-sm"><input id="4.2" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row4.column2}/></div>
-                            <div className="col-sm"><input id="4.3" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row4.column3}/></div>
-                            <div className="col-sm"><input id="4.4" className="boggle-letter-input" type="text" onChange={this.handleChange} value={this.state.row4.column4}/></div>
+                            <div className="col-sm"><input id="4.1" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row4.column1}/></div>
+                            <div className="col-sm"><input id="4.2" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row4.column2}/></div>
+                            <div className="col-sm"><input id="4.3" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row4.column3}/></div>
+                            <div className="col-sm"><input id="4.4" className="boggle-letter-input" type="text" onChange={this.handleLetterChange} value={this.state.row4.column4}/></div>
                             <div className="col-sm"></div>
                             <div className="col-sm"></div>
                         </div>
@@ -212,32 +223,44 @@ class SubmitBoggle extends React.Component {
                 <div className="container">
                     <div className="row">
                         <div className="col-sm">
-                            <div>Words Matched:</div>
+                            <div>Words Matched: {this.state.wordsMatched.length}</div>
                             <div className={this.state.spinnerVisibility}>
                                 <div className="spinner-grow" role="status">
                                     <span className="sr-only">Loading...</span>
                                 </div>
                             </div>
                             <div>
-                                <ul className="matchedWordList">{words}
-                                </ul>
+                                <div className="container">
+                                    <div className="row">
+                                        <div className="col-sm">
+                                            <ul className="list-group">
+                                                {column1}</ul>
+
+                                        </div>
+                                        <div className="col-sm">
+                                            <ul className="list-group">
+                                                {column2}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                < /div>);
-                    }
-                    }
+            </div>);
+    }
+}
 
 
-                    function App() {
-                        return (
-                        <div className="App">
-                        <div className="container">
-                        <h1>Boggle Evaluator</h1><SubmitBoggle/>
-                        </div>
-                        </div>
-                        );
-                    }
+function App() {
+    return (
+        <div className="App">
+            <div className="container">
+                <h1>Boggle Evaluator</h1><SubmitBoggle/>
+            </div>
+        </div>
+    );
+}
 
-                    export default App;
+export default App;

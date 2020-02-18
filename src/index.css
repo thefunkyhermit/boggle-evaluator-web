@@ -11,3 +11,21 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.matchedWordList {
+  margin-top: 50px;
+}
+.boggle-letter-input {
+  text-align: center;
+  height:100px;
+  width:100px;
+  font-size:25px;
+}
+.http-loading-visible {
+  visibility: visible;
+}
+.http-loading-hidden {
+  visibility: hidden;
+}
+.separator {
+  height:20px;
+}
